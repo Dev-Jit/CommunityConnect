@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Color Hunt Palette: #222831, #393E46, #00ADB5, #EEEEEE */
+    --background: 0 0% 93%; /* #EEEEEE - Light gray background */
+    --foreground: 210 18% 16%; /* #222831 - Dark blue/black text */
+    --card: 0 0% 100%; /* White cards */
+    --card-foreground: 210 18% 16%; /* #222831 */
+    --primary: 183 100% 35%; /* #00ADB5 - Teal primary */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --secondary: 210 10% 25%; /* #393E46 - Dark gray secondary */
+    --secondary-foreground: 0 0% 93%; /* #EEEEEE - Light text on secondary */
+    --muted: 210 10% 25%; /* #393E46 - Muted backgrounds */
+    --muted-foreground: 210 18% 16%; /* #222831 - Muted text */
+    --accent: 183 100% 35%; /* #00ADB5 - Accent color */
+    --accent-foreground: 0 0% 100%; /* White on accent */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 10% 80%; /* Light border */
+    --input: 210 10% 80%; /* Input border */
+    --ring: 183 100% 35%; /* #00ADB5 - Focus ring */
+    --radius: 0.5rem;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 18% 16%;
+  }
+
+  .dark {
+    /* Dark mode using Color Hunt Palette */
+    --background: 210 18% 16%; /* #222831 - Dark background */
+    --foreground: 0 0% 93%; /* #EEEEEE - Light text */
+    --card: 210 10% 25%; /* #393E46 - Dark gray cards */
+    --card-foreground: 0 0% 93%; /* #EEEEEE */
+    --primary: 183 100% 35%; /* #00ADB5 - Teal primary */
+    --primary-foreground: 0 0% 100%; /* White on primary */
+    --secondary: 210 10% 25%; /* #393E46 */
+    --secondary-foreground: 0 0% 93%; /* #EEEEEE */
+    --muted: 210 10% 25%; /* #393E46 */
+    --muted-foreground: 0 0% 70%; /* Lighter gray text */
+    --accent: 183 100% 35%; /* #00ADB5 */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 10% 35%; /* Slightly lighter border */
+    --input: 210 10% 35%;
+    --ring: 183 100% 35%; /* #00ADB5 */
+    --popover: 210 10% 25%; /* #393E46 */
+    --popover-foreground: 0 0% 93%; /* #EEEEEE */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+

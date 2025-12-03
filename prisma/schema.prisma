@@ -1,0 +1,167 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  VOLUNTEER
+  ORGANIZATION
+  ADMIN
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  FLAGGED
+}
+
+enum PostCategory {
+  ENVIRONMENT
+  EDUCATION
+  HEALTHCARE
+  COMMUNITY
+  ANIMALS
+  ARTS
+  SPORTS
+  TECHNOLOGY
+  OTHER
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          UserRole  @default(VOLUNTEER)
+  bio           String?   @db.Text
+  location      String?
+  latitude      Float?
+  longitude     Float?
+  skills        String[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  posts         Post[]
+  applications  Application[]
+  organization  Organization?
+  notifications Notification[]
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  website     String?
+  logo        String?
+  location    String?
+  latitude    Float?
+  longitude   Float?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts       Post[]
+}
+
+model Post {
+  id          String       @id @default(cuid())
+  title       String
+  description String       @db.Text
+  category    PostCategory
+  status      PostStatus   @default(DRAFT)
+  location    String?
+  latitude    Float?
+  longitude   Float?
+  images      String[]
+  tags        String[]
+  maxVolunteers Int?
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  authorId    String
+  author      User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  applications Application[]
+}
+
+model Application {
+  id        String   @id @default(cuid())
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  message   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  volunteerId String
+  volunteer   User   @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  postId      String
+  post        Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([volunteerId, postId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String   @db.Text
+  type      String   // INFO, SUCCESS, WARNING, ERROR
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
