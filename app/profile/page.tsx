@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Navbar } from "@/components/layout/navbar"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -41,6 +42,8 @@ export default function ProfilePage() {
   })
   const [skillInput, setSkillInput] = useState("")
   const [saving, setSaving] = useState(false)
+  const [penalties, setPenalties] = useState<any[]>([])
+  const [showPenalties, setShowPenalties] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -50,6 +53,7 @@ export default function ProfilePage() {
 
     if (status === "authenticated") {
       fetchProfile()
+      fetchPenalties()
     }
   }, [status, router])
 
@@ -108,6 +112,18 @@ export default function ProfilePage() {
       ...formData,
       skills: formData.skills.filter((s) => s !== skill),
     })
+  }
+
+  const fetchPenalties = async () => {
+    try {
+      const response = await fetch("/api/penalties/my")
+      if (response.ok) {
+        const data = await response.json()
+        setPenalties(data.active || [])
+      }
+    } catch (error) {
+      console.error("Error fetching penalties:", error)
+    }
   }
 
   if (status === "loading" || loading) {
@@ -290,6 +306,80 @@ export default function ProfilePage() {
             )}
           </CardContent>
         </Card>
+
+        {penalties.length > 0 && (
+          <Card className="mt-6">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>My Penalties</CardTitle>
+                  <CardDescription>
+                    Active penalties on your account
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPenalties(!showPenalties)}
+                >
+                  {showPenalties ? "Hide" : "Show"}
+                </Button>
+              </div>
+            </CardHeader>
+            {showPenalties && (
+              <CardContent>
+                <div className="space-y-4">
+                  {penalties.map((penalty) => (
+                    <div
+                      key={penalty.id}
+                      className="p-4 border rounded-lg"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge
+                              variant={
+                                penalty.type === "SUSPENSION"
+                                  ? "destructive"
+                                  : penalty.type === "TEMPORARY_RESTRICTION"
+                                  ? "secondary"
+                                  : "outline"
+                              }
+                            >
+                              {penalty.type.replace("_", " ")}
+                            </Badge>
+                            <Badge variant="default">ACTIVE</Badge>
+                          </div>
+                          <p className="font-semibold">{penalty.reason}</p>
+                        </div>
+                      </div>
+                      {penalty.description && (
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {penalty.description}
+                        </p>
+                      )}
+                      <div className="text-xs text-muted-foreground">
+                        <p>
+                          Issued: {new Date(penalty.createdAt).toLocaleDateString()}
+                        </p>
+                        {penalty.expiresAt && (
+                          <p>
+                            Expires: {new Date(penalty.expiresAt).toLocaleDateString()}
+                          </p>
+                        )}
+                        {!penalty.expiresAt && penalty.type === "SUSPENSION" && (
+                          <p className="text-destructive">
+                            This is a permanent suspension until resolved by admin
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        )}
       </div>
     </div>
   )

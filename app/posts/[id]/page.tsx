@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
+import { BackButton } from "@/components/ui/back-button"
 
 interface Post {
   id: string
@@ -117,15 +118,27 @@ export default function PostDetailPage() {
     )
   }
 
-  const isAuthor = session && (session.user as any)?.id === post.author.id
-  const hasApplied = post.applications.some(
-    (app) => (session?.user as any)?.id && app.volunteer.name === session.user?.name
-  )
+  if (!post.author) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <p>Error loading post data</p>
+        </div>
+      </div>
+    )
+  }
+
+  const isAuthor = session && (session.user as any)?.id === post.author?.id
+  const hasApplied = post.applications?.some(
+    (app) => (session?.user as any)?.id && app.volunteer?.name === session.user?.name
+  ) || false
 
   return (
     <div className="min-h-screen">
       <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <BackButton className="mb-4" />
         <Card className="overflow-hidden">
           <div className="relative h-64 w-full">
             <img

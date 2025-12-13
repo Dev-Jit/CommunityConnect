@@ -108,6 +108,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
+    // If organization, set status to PENDING_APPROVAL, otherwise PUBLISHED
+    const postStatus = user.role === "ORGANIZATION" ? "PENDING_APPROVAL" : "PUBLISHED"
+
     const post = await prisma.post.create({
       data: {
         title: validatedData.title,
@@ -119,7 +122,7 @@ export async function POST(request: Request) {
         tags: validatedData.tags || [],
         maxVolunteers: validatedData.maxVolunteers || null,
         images: validatedData.images || [],
-        status: "PUBLISHED", // Auto-publish posts by default
+        status: postStatus,
         authorId: user.id,
         organizationId: user.organization?.id || null,
         startDate: validatedData.startDate

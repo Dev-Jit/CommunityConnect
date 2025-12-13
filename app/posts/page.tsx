@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Navbar } from "@/components/layout/navbar"
+import { BackButton } from "@/components/ui/back-button"
 import Link from "next/link"
 import { formatDate } from "@/lib/utils"
 
@@ -138,6 +139,7 @@ export default function PostsPage() {
     <div className="min-h-screen">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
+        <BackButton className="mb-4" />
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Volunteer Opportunities</h1>
           <div className="flex gap-2">

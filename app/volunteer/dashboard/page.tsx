@@ -103,9 +103,14 @@ export default function VolunteerDashboard() {
               Welcome back, {session?.user?.name}!
             </p>
           </div>
-          <Link href="/posts">
-            <Button>Browse Opportunities</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/posts">
+              <Button>Browse Opportunities</Button>
+            </Link>
+            <Link href="/volunteer/certificates">
+              <Button variant="outline">My Certificates</Button>
+            </Link>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">

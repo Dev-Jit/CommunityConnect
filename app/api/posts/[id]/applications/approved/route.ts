@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-export async function POST(
+export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
@@ -13,10 +13,10 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if user owns the post
+    // Get post and verify ownership
     const post = await prisma.post.findUnique({
       where: { id: params.id },
-      select: { authorId: true, status: true },
+      select: { authorId: true },
     })
 
     if (!post) {
@@ -27,37 +27,32 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    // Update post status to PENDING_APPROVAL (for organizations) or PUBLISHED (for others)
-    const user = await prisma.user.findUnique({
-      where: { id: (session.user as any).id },
-    })
-
-    const newStatus = user?.role === "ORGANIZATION" ? "PENDING_APPROVAL" : "PUBLISHED"
-
-    const updatedPost = await prisma.post.update({
-      where: { id: params.id },
-      data: { status: newStatus },
+    // Get approved applications for this post
+    const applications = await prisma.application.findMany({
+      where: {
+        postId: params.id,
+        status: "APPROVED",
+      },
       include: {
-        author: {
+        volunteer: {
           select: {
             id: true,
             name: true,
+            email: true,
             image: true,
-          },
-        },
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            logo: true,
+            bio: true,
+            skills: true,
           },
         },
       },
+      orderBy: {
+        createdAt: "desc",
+      },
     })
 
-    return NextResponse.json(updatedPost)
+    return NextResponse.json(applications)
   } catch (error) {
-    console.error("Error publishing post:", error)
+    console.error("Error fetching approved applications:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

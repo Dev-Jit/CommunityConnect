@@ -13,51 +13,37 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if user owns the post
-    const post = await prisma.post.findUnique({
-      where: { id: params.id },
-      select: { authorId: true, status: true },
-    })
-
-    if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 })
-    }
-
-    if (post.authorId !== (session.user as any).id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    // Update post status to PENDING_APPROVAL (for organizations) or PUBLISHED (for others)
     const user = await prisma.user.findUnique({
       where: { id: (session.user as any).id },
     })
 
-    const newStatus = user?.role === "ORGANIZATION" ? "PENDING_APPROVAL" : "PUBLISHED"
+    if (!user || user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
-    const updatedPost = await prisma.post.update({
+    // Update post status to PUBLISHED
+    const post = await prisma.post.update({
       where: { id: params.id },
-      data: { status: newStatus },
+      data: { status: "PUBLISHED" },
       include: {
         author: {
           select: {
             id: true,
             name: true,
-            image: true,
+            email: true,
           },
         },
         organization: {
           select: {
-            id: true,
             name: true,
-            logo: true,
           },
         },
       },
     })
 
-    return NextResponse.json(updatedPost)
+    return NextResponse.json(post)
   } catch (error) {
-    console.error("Error publishing post:", error)
+    console.error("Error approving post:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

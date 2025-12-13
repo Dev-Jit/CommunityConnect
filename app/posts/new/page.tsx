@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { BackButton } from "@/components/ui/back-button"
 
 const categories = [
   "ENVIRONMENT",
@@ -105,6 +106,13 @@ export default function NewPostPage() {
         } else {
           setError("An error occurred. Please check all required fields.")
         }
+        setLoading(false)
+        return
+      }
+
+      // If organization post is pending approval, redirect to dashboard
+      if (data.status === "PENDING_APPROVAL") {
+        router.push("/organization/dashboard")
         return
       }
 
@@ -293,6 +301,7 @@ export default function NewPostPage() {
     <div className="min-h-screen">
       <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <BackButton className="mb-4" />
         <Card>
           <CardHeader>
             <CardTitle>Create New Post</CardTitle>

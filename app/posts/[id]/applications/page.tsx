@@ -3,16 +3,20 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
+import Link from "next/link"
 import { Navbar } from "@/components/layout/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { BackButton } from "@/components/ui/back-button"
 
 interface Application {
   id: string
   status: string
   message: string | null
+  attendanceStatus: string
+  attendanceMarkedAt: string | null
   createdAt: string
   volunteer: {
     id: string
@@ -98,6 +102,27 @@ export default function PostApplicationsPage() {
     }
   }
 
+  const handleAttendance = async (applicationId: string, attendanceStatus: "PRESENT" | "ABSENT") => {
+    try {
+      const response = await fetch(`/api/applications/${applicationId}/attendance`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attendanceStatus }),
+      })
+
+      if (response.ok) {
+        fetchData()
+        alert(`Attendance marked as ${attendanceStatus.toLowerCase()}`)
+      } else {
+        const data = await response.json()
+        alert(data.error || "Failed to mark attendance")
+      }
+    } catch (error) {
+      console.error("Error marking attendance:", error)
+      alert("An error occurred")
+    }
+  }
+
   if (loading || sessionStatus === "loading") {
     return (
       <div className="min-h-screen">
@@ -125,9 +150,7 @@ export default function PostApplicationsPage() {
       <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-6">
-          <Button variant="outline" onClick={() => router.back()}>
-            ← Back
-          </Button>
+          <BackButton />
         </div>
 
         <Card className="mb-6">
@@ -167,17 +190,36 @@ export default function PostApplicationsPage() {
                         <CardDescription>{application.volunteer.email}</CardDescription>
                       </div>
                     </div>
-                    <Badge
-                      variant={
-                        application.status === "APPROVED"
-                          ? "default"
-                          : application.status === "REJECTED"
-                          ? "destructive"
-                          : "secondary"
-                      }
-                    >
-                      {application.status}
-                    </Badge>
+                    <div className="flex gap-2 items-center">
+                      <Badge
+                        variant={
+                          application.status === "APPROVED"
+                            ? "default"
+                            : application.status === "REJECTED"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {application.status}
+                      </Badge>
+                      {application.status === "APPROVED" && (
+                        <Badge
+                          variant={
+                            application.attendanceStatus === "PRESENT"
+                              ? "default"
+                              : application.attendanceStatus === "ABSENT"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                        >
+                          {application.attendanceStatus === "PRESENT"
+                            ? "Present"
+                            : application.attendanceStatus === "ABSENT"
+                            ? "Absent"
+                            : "Not Marked"}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -223,6 +265,35 @@ export default function PostApplicationsPage() {
                         >
                           Reject
                         </Button>
+                      </>
+                    )}
+                    {application.status === "APPROVED" && (
+                      <>
+                        {application.attendanceStatus === "NOT_MARKED" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleAttendance(application.id, "PRESENT")}
+                            >
+                              Mark Present
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleAttendance(application.id, "ABSENT")}
+                            >
+                              Mark Absent
+                            </Button>
+                          </>
+                        )}
+                        {application.attendanceStatus === "PRESENT" && (
+                          <Link href="/organization/certificates">
+                            <Button size="sm" variant="outline">
+                              Issue Certificate
+                            </Button>
+                          </Link>
+                        )}
                       </>
                     )}
                   </div>

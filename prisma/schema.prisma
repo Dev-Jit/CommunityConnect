@@ -18,6 +18,7 @@ enum UserRole {
 
 enum PostStatus {
   DRAFT
+  PENDING_APPROVAL
   PUBLISHED
   ARCHIVED
   FLAGGED
@@ -92,6 +93,8 @@ model User {
   applications  Application[]
   organization  Organization?
   notifications Notification[]
+  certificates  Certificate[]
+  penalties     Penalty[]
 }
 
 model Organization {
@@ -110,6 +113,7 @@ model Organization {
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   posts       Post[]
+  certificates Certificate[]
 }
 
 model Post {
@@ -134,12 +138,22 @@ model Post {
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   applications Application[]
+  certificates  Certificate[]
+}
+
+enum AttendanceStatus {
+  PENDING
+  PRESENT
+  ABSENT
+  NOT_MARKED
 }
 
 model Application {
   id        String   @id @default(cuid())
   status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
   message   String?  @db.Text
+  attendanceStatus AttendanceStatus @default(NOT_MARKED)
+  attendanceMarkedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -162,6 +176,58 @@ model Notification {
 
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Certificate {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  issuedDate  DateTime @default(now())
+  certificateUrl String? // URL to certificate PDF/image
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  volunteerId String
+  volunteer   User     @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  postId      String
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([volunteerId])
+  @@index([postId])
+}
+
+enum PenaltyType {
+  WARNING
+  TEMPORARY_RESTRICTION
+  SUSPENSION
+}
+
+enum PenaltyStatus {
+  ACTIVE
+  RESOLVED
+  EXPIRED
+}
+
+model Penalty {
+  id          String   @id @default(cuid())
+  type        PenaltyType
+  status      PenaltyStatus @default(ACTIVE)
+  reason      String   @db.Text
+  description String?  @db.Text
+  expiresAt   DateTime? // For temporary restrictions and suspensions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  issuedBy   String? // Admin user ID who issued the penalty
+
+  @@index([userId])
+  @@index([status])
 }
 
 

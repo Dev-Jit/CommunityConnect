@@ -9,8 +9,30 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const post = await prisma.post.findUnique({
-      where: { id: params.id },
+    const session = await getServerSession(authOptions)
+    const user = session?.user
+      ? await prisma.user.findUnique({
+          where: { id: (session.user as any).id },
+        })
+      : null
+
+    // Non-admin users can only see PUBLISHED posts, except for their own posts
+    const where: any = { id: params.id }
+    if (!user || user.role !== "ADMIN") {
+      // Allow users to see their own posts regardless of status
+      if (user?.id) {
+        where.OR = [
+          { status: "PUBLISHED" },
+          { authorId: user.id },
+        ]
+      } else {
+        // Not logged in - only PUBLISHED posts
+        where.status = "PUBLISHED"
+      }
+    }
+
+    const post = await prisma.post.findFirst({
+      where,
       include: {
         author: {
           select: {
@@ -44,6 +66,14 @@ export async function GET(
 
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 })
+    }
+
+    // Ensure author is included (should always be present due to relation)
+    if (!post.author) {
+      return NextResponse.json(
+        { error: "Post data incomplete" },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json(post)

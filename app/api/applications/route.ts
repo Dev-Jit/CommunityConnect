@@ -26,6 +26,44 @@ export async function POST(request: Request) {
       )
     }
 
+    // Check if user has active penalties that prevent participation
+    const activePenalties = await prisma.penalty.findMany({
+      where: {
+        userId: user.id,
+        status: "ACTIVE",
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gt: new Date() } },
+        ],
+      },
+    })
+
+    const suspension = activePenalties.find((p) => p.type === "SUSPENSION")
+    if (suspension) {
+      return NextResponse.json(
+        { error: "Your account is suspended. You cannot apply to events." },
+        { status: 403 }
+      )
+    }
+
+    const restriction = activePenalties.find(
+      (p) => p.type === "TEMPORARY_RESTRICTION"
+    )
+    if (restriction) {
+      const expiresAt = restriction.expiresAt
+        ? new Date(restriction.expiresAt)
+        : null
+      const expiresMessage = expiresAt
+        ? ` until ${expiresAt.toLocaleDateString()}`
+        : ""
+      return NextResponse.json(
+        {
+          error: `Your account has temporary restrictions. You cannot apply to events${expiresMessage}.`,
+        },
+        { status: 403 }
+      )
+    }
+
     // Check if already applied
     const existingApplication = await prisma.application.findUnique({
       where: {

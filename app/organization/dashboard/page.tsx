@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Navbar } from "@/components/layout/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
 
 interface Post {
   id: string
@@ -136,9 +136,14 @@ export default function OrganizationDashboard() {
               Manage your volunteer opportunities
             </p>
           </div>
-          <Link href="/posts/new">
-            <Button>Create Post</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/posts/new">
+              <Button>Create Post</Button>
+            </Link>
+            <Link href="/organization/certificates">
+              <Button variant="outline">Issue Certificates</Button>
+            </Link>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -208,12 +213,14 @@ export default function OrganizationDashboard() {
                       variant={
                         post.status === "PUBLISHED"
                           ? "default"
-                          : post.status === "DRAFT"
+                          : post.status === "PENDING_APPROVAL"
                           ? "secondary"
-                          : "outline"
+                          : post.status === "DRAFT"
+                          ? "outline"
+                          : "destructive"
                       }
                     >
-                      {post.status}
+                      {post.status === "PENDING_APPROVAL" ? "PENDING APPROVAL" : post.status}
                     </Badge>
                   </div>
                 </div>
@@ -241,15 +248,24 @@ export default function OrganizationDashboard() {
                           variant="default"
                           onClick={() => handlePublish(post.id)}
                         >
-                          Publish
+                          Submit for Approval
                         </Button>
                       )}
-                      <Link href={`/posts/${post.id}/applications`}>
-                        <Button variant="outline">View Applications</Button>
-                      </Link>
-                      <Link href={`/posts/${post.id}/edit`}>
-                        <Button variant="outline">Edit</Button>
-                      </Link>
+                      {post.status === "PENDING_APPROVAL" && (
+                        <Badge variant="secondary" className="px-3 py-1">
+                          Awaiting Admin Approval
+                        </Badge>
+                      )}
+                      {post.status === "PUBLISHED" && (
+                        <>
+                          <Link href={`/posts/${post.id}/applications`}>
+                            <Button variant="outline">View Applications</Button>
+                          </Link>
+                          <Link href={`/posts/${post.id}/edit`}>
+                            <Button variant="outline">Edit</Button>
+                          </Link>
+                        </>
+                      )}
                       <Button
                         variant="destructive"
                         onClick={() => handleDeletePost(post.id)}
