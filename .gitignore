@@ -38,4 +38,5 @@ next-env.d.ts
 # prisma
 /prisma/migrations
 
+PROJECT_OVERVIEW.md
 

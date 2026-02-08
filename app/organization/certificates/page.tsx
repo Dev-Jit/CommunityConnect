@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BackButton } from "@/components/ui/back-button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface ApprovedApplication {
   id: string
@@ -50,6 +49,7 @@ export default function IssueCertificatesPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([])
   const [loading, setLoading] = useState(true)
   const [issuing, setIssuing] = useState<string | null>(null)
+  const [issuingAll, setIssuingAll] = useState(false)
   const [certificateForm, setCertificateForm] = useState({
     title: "",
     description: "",
@@ -149,6 +149,50 @@ export default function IssueCertificatesPage() {
       alert("An error occurred")
     } finally {
       setIssuing(null)
+    }
+  }
+
+  const handleIssueAllCertificates = async () => {
+    if (!selectedPost) {
+      alert("Please select an event")
+      return
+    }
+    if (!certificateForm.title.trim()) {
+      alert("Please enter a certificate title")
+      return
+    }
+
+    setIssuingAll(true)
+    try {
+      const response = await fetch("/api/certificates/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId: selectedPost,
+          title: certificateForm.title,
+          description: certificateForm.description || undefined,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        alert(data.error || "Failed to issue certificates")
+        return
+      }
+
+      // Reset form and refresh
+      setCertificateForm({ title: "", description: "" })
+      fetchCertificates()
+      fetchApprovedApplications()
+
+      alert(
+        `Certificates issued!\n\nCreated: ${data.created}\nSkipped (already issued): ${data.skippedExisting}\nSkipped (suspended): ${data.skippedPenalty}\nSkipped (not eligible): ${data.skippedNotEligible}`
+      )
+    } catch (error) {
+      console.error("Error issuing all certificates:", error)
+      alert("An error occurred")
+    } finally {
+      setIssuingAll(false)
     }
   }
 
@@ -265,12 +309,22 @@ export default function IssueCertificatesPage() {
         {selectedPost && (
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>
-                Approved Volunteers ({approvedApplications.length})
-              </CardTitle>
-              <CardDescription>
-                Issue certificates to volunteers who participated in this event
-              </CardDescription>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <CardTitle>
+                    Approved Volunteers ({approvedApplications.length})
+                  </CardTitle>
+                  <CardDescription>
+                    Issue certificates to volunteers who participated in this event
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={handleIssueAllCertificates}
+                  disabled={issuingAll || approvedApplications.length === 0}
+                >
+                  {issuingAll ? "Issuing to all..." : "Issue to All"}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {approvedApplications.length === 0 ? (
